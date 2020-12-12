@@ -114,6 +114,7 @@ public class TelegramDataService {
             PollResponse pollResponse = new PollResponse();
             pollResponse.setName(poll.getName());
             pollResponse.setId(poll.getId().toString());
+            pollResponse.setStatus(poll.getStatus());
 
             Collection<QuestionEntity> questionEntities =
                 questionRepository.findQuestionEntitiesByPollId(poll.getId().toString());

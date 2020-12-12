@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 public class PollResponse {
     private String id;
     private String name;
+    private String status;
     private List<QuestionResponse> questions = new ArrayList<>();
 }
