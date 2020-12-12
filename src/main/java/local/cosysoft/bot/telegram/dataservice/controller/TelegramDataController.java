@@ -3,8 +3,10 @@ package local.cosysoft.bot.telegram.dataservice.controller;
 import java.util.Collection;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.AnswerCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.PollCreationPayload;
+import local.cosysoft.bot.telegram.dataservice.controller.payload.QuestionCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.response.PollResponse;
 import local.cosysoft.bot.telegram.dataservice.entity.AnswerEntity;
+import local.cosysoft.bot.telegram.dataservice.entity.PollEntity;
 import local.cosysoft.bot.telegram.dataservice.service.TelegramDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -37,8 +39,13 @@ public class TelegramDataController {
         return telegramDataService.createPoll(payload);
     }
 
-    @GetMapping(value = "/answer/last")
-    public AnswerEntity getLastAnswer(@RequestParam String pullId) {
-        return telegramDataService.getLastAnswer(pullId);
+    @PostMapping(value = "/question", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public String createQuestion(@RequestBody QuestionCreationPayload payload) {
+        return telegramDataService.createQuestion(payload);
+    }
+
+    @GetMapping(value = "/poll/last")
+    public PollResponse getLastPoll() {
+        return telegramDataService.getLastPoll();
     }
 }

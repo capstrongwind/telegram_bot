@@ -7,4 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class QuestionCreationPayload {
     private String content;
+    private String pollId;
 }

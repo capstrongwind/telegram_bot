@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.AnswerCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.PollCreationPayload;
+import local.cosysoft.bot.telegram.dataservice.controller.payload.QuestionCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.response.PollResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.QuestionResponse;
 import local.cosysoft.bot.telegram.dataservice.entity.AnswerEntity;
@@ -79,24 +80,46 @@ public class TelegramDataService {
         UUID pollId = UUID.randomUUID();
         pollEntity.setId(pollId);
         pollEntity.setName(payload.getPollName());
-
-        List<QuestionEntity> questionEntities = payload.getQuestions().stream().map(q -> {
-            QuestionEntity questionEntity = new QuestionEntity();
-            UUID questionId = UUID.randomUUID();
-            questionEntity.setPollId(pollId.toString());
-            questionEntity.setContent(q.getContent());
-            questionEntity.setId(questionId);
-            return questionEntity;
-        }).collect(Collectors.toList());
-
+        pollEntity.setCreateDate(LocalDateTime.now());
         pollRepository.save(pollEntity);
-        questionRepository.saveAll(questionEntities);
-
         return pollId.toString();
     }
 
-    public AnswerEntity getLastAnswer(final String pullId) {
-        Collection<AnswerEntity> answerEntitiesByPollId = answerRepository.getAnswerEntitiesByPollId(pullId);
-        return answerEntitiesByPollId.stream().max(Comparator.comparing(AnswerEntity::getCreateDate)).orElse(new AnswerEntity());
+    public String createQuestion(final QuestionCreationPayload payload) {
+        QuestionEntity questionEntity = new QuestionEntity();
+        UUID questionId = UUID.randomUUID();
+        questionEntity.setPollId(payload.getPollId());
+        questionEntity.setContent(payload.getContent());
+        questionEntity.setId(questionId);
+        questionRepository.save(questionEntity);
+        return questionId.toString();
+    }
+
+    public PollResponse getLastPoll() {
+        List<PollEntity> pollEntities = pollRepository.findAll();
+        Optional<PollEntity> pollEntity = pollEntities.stream().max(Comparator.comparing(PollEntity::getCreateDate));
+
+        if (pollEntity.isPresent()) {
+            PollEntity poll = pollEntity.get();
+            PollResponse pollResponse = new PollResponse();
+            pollResponse.setName(poll.getName());
+            pollResponse.setId(poll.getId().toString());
+
+            Collection<QuestionEntity> questionEntities =
+                questionRepository.findQuestionEntitiesByPollId(poll.getId().toString());
+
+            List<QuestionResponse> questionResponses = questionEntities.stream().map(questionEntity -> {
+                QuestionResponse questionResponse = new QuestionResponse();
+                questionResponse.setId(questionEntity.getId().toString());
+                questionResponse.setContent(questionEntity.getContent());
+                return questionResponse;
+            }).collect(Collectors.toList());
+
+            pollResponse.setQuestions(questionResponses);
+            return pollResponse;
+        }
+
+        return new PollResponse();
+
     }
 }
