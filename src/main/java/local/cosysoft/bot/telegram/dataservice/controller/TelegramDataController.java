@@ -67,10 +67,10 @@ public class TelegramDataController {
         return pollResponse.get();
     }
 
-    @PutMapping(value = "/poll/{id}/start")
+    @PutMapping(value = "/poll/start")
     @Operation(summary = "Активация опроса")
-    public String startPoll(@PathVariable String id, HttpServletResponse response) {
-        String s = telegramDataService.startPoll(id);
+    public String startPoll(HttpServletResponse response) {
+        String s = telegramDataService.startPoll();
         if (s.equals("")) {
             response.setStatus(HttpStatus.BAD_REQUEST.value());
             return s;
@@ -78,10 +78,10 @@ public class TelegramDataController {
         return s;
     }
 
-    @PutMapping(value = "/poll/{id}/stop")
+    @PutMapping(value = "/poll/stop")
     @Operation(summary = "Деактивация опроса")
-    public String stopPoll(@PathVariable String id) {
-        return telegramDataService.stopPoll(id);
+    public String stopPoll() {
+        return telegramDataService.stopPoll();
     }
 
     @PostMapping(value = "/bind/answer", consumes = MediaType.APPLICATION_JSON_VALUE)

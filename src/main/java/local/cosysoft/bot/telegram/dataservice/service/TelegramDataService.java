@@ -131,12 +131,13 @@ public class TelegramDataService {
 
     }
 
-    public String startPoll(final String id) {
+    public String startPoll() {
         List<PollEntity> polls = pollRepository.findAll();
         if (CollectionUtils.isEmpty(polls)) {
             return "";
         }
-        Optional<PollEntity> pollEntityOpt = polls.stream().filter(p -> p.getId().equals(UUID.fromString(id))).findFirst();
+        Optional<PollEntity> pollEntityOpt =
+            polls.stream().max(Comparator.comparing(PollEntity::getCreateDate));
         if (!pollEntityOpt.isPresent()) {
             return "";
         }
@@ -144,13 +145,15 @@ public class TelegramDataService {
         pollEntity.setStatus("ACTIVE");
         pollEntity.setIsRunnable(Boolean.TRUE);
 
-        polls.stream().filter(p -> !p.getId().equals(UUID.fromString(id))).forEach(p -> p.setStatus("CREATED"));
+        polls.stream().filter(p -> !p.getId().equals(pollEntity.getId())).forEach(p -> p.setStatus("CREATED"));
         pollRepository.saveAll(polls);
         return pollEntity.getId().toString();
     }
 
-    public String stopPoll(final String id) {
-        Optional<PollEntity> pollEntityOpt = pollRepository.findById(UUID.fromString(id));
+    public String stopPoll() {
+        List<PollEntity> polls = pollRepository.findAll();
+        Optional<PollEntity> pollEntityOpt =
+            polls.stream().max(Comparator.comparing(PollEntity::getCreateDate));
         if (!pollEntityOpt.isPresent()) {
             return "";
         }
