@@ -5,8 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class AnswerCreationPayload {
-    private String content;
-    private String pollId;
-    private String questionId;
+public class AnswerToUserBindingPayload {
+    private String userId;
+    private String answerId;
 }

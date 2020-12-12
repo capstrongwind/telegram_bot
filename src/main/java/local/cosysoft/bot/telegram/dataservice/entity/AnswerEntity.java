@@ -14,7 +14,5 @@ public class AnswerEntity extends BaseUUIDEntity {
     private String content;
     private String pollId;
     private String questionId;
-    private String userTelegramId;
     private LocalDateTime createDate;
-    private Boolean isRunnable;
 }
