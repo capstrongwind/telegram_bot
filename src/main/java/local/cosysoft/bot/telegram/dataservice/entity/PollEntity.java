@@ -13,5 +13,6 @@ import lombok.EqualsAndHashCode;
 public class PollEntity extends BaseUUIDEntity {
     private String name;
     private LocalDateTime createDate;
+    private String status;
     private Boolean isRunnable;
 }

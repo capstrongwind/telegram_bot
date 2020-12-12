@@ -3,6 +3,7 @@ package local.cosysoft.bot.telegram.dataservice.service;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import local.cosysoft.bot.telegram.dataservice.controller.payload.AnswerToUserBi
 import local.cosysoft.bot.telegram.dataservice.controller.payload.PollCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.QuestionCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.response.AnswerResponse;
+import local.cosysoft.bot.telegram.dataservice.controller.response.BasicAnswerResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.PollResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.QuestionResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.QuestionToAnswerResponse;
@@ -25,6 +27,7 @@ import local.cosysoft.bot.telegram.dataservice.repository.PollRepository;
 import local.cosysoft.bot.telegram.dataservice.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -84,6 +87,7 @@ public class TelegramDataService {
         pollEntity.setId(pollId);
         pollEntity.setName(payload.getPollName());
         pollEntity.setCreateDate(LocalDateTime.now());
+        pollEntity.setStatus("CREATED");
         pollRepository.save(pollEntity);
         return pollId.toString();
     }
@@ -100,10 +104,8 @@ public class TelegramDataService {
 
     public Optional<PollResponse> getCurrentPoll() {
         List<PollEntity> pollEntities = pollRepository.findAll();
-        Optional<PollEntity> pollEntity = pollEntities.stream().filter(pollEntity1 -> {
-            Boolean isRunnable = pollEntity1.getIsRunnable();
-            return isRunnable != null && isRunnable;
-        }).findFirst();
+        Optional<PollEntity> pollEntity =
+            pollEntities.stream().max(Comparator.comparing(PollEntity::getCreateDate));
 
         if (pollEntity.isPresent()) {
             PollEntity poll = pollEntity.get();
@@ -130,13 +132,20 @@ public class TelegramDataService {
     }
 
     public String startPoll(final String id) {
-        Optional<PollEntity> pollEntityOpt = pollRepository.findById(UUID.fromString(id));
+        List<PollEntity> polls = pollRepository.findAll();
+        if (CollectionUtils.isEmpty(polls)) {
+            return "";
+        }
+        Optional<PollEntity> pollEntityOpt = polls.stream().filter(p -> p.getId().equals(UUID.fromString(id))).findFirst();
         if (!pollEntityOpt.isPresent()) {
             return "";
         }
         PollEntity pollEntity = pollEntityOpt.get();
+        pollEntity.setStatus("ACTIVE");
         pollEntity.setIsRunnable(Boolean.TRUE);
-        pollRepository.save(pollEntity);
+
+        polls.stream().filter(p -> !p.getId().equals(UUID.fromString(id))).forEach(p -> p.setStatus("CREATED"));
+        pollRepository.saveAll(polls);
         return pollEntity.getId().toString();
     }
 
@@ -147,6 +156,7 @@ public class TelegramDataService {
         }
         PollEntity pollEntity = pollEntityOpt.get();
         pollEntity.setIsRunnable(Boolean.FALSE);
+        pollEntity.setStatus("CLOSED");
         pollRepository.save(pollEntity);
         return pollEntity.getId().toString();
     }
@@ -191,6 +201,14 @@ public class TelegramDataService {
             QuestionResponse questionResponse = new QuestionResponse();
             questionResponse.setId(questionEntity.get().getId().toString());
             questionResponse.setContent(questionEntity.get().getContent());
+            Collection<AnswerEntity> answerEntities = answerRepository.getAnswerEntitiesByQuestionId(id);
+            List<BasicAnswerResponse> answerResponses = answerEntities.stream().map(entity -> {
+                BasicAnswerResponse basicAnswerResponse = new BasicAnswerResponse();
+                basicAnswerResponse.setContent(entity.getContent());
+                basicAnswerResponse.setId(entity.getId().toString());
+                return basicAnswerResponse;
+            }).collect(Collectors.toList());
+            questionResponse.setAnswers(answerResponses);
             return Optional.of(questionResponse);
         }
         return Optional.empty();

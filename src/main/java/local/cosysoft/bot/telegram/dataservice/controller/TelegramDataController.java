@@ -69,8 +69,13 @@ public class TelegramDataController {
 
     @PutMapping(value = "/poll/{id}/start")
     @Operation(summary = "Активация опроса")
-    public String startPoll(@PathVariable String id) {
-        return telegramDataService.startPoll(id);
+    public String startPoll(@PathVariable String id, HttpServletResponse response) {
+        String s = telegramDataService.startPoll(id);
+        if (s.equals("")) {
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return s;
+        }
+        return s;
     }
 
     @PutMapping(value = "/poll/{id}/stop")
