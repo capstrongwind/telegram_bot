@@ -1,5 +1,6 @@
 package local.cosysoft.bot.telegram.dataservice.service;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -7,7 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import local.cosysoft.bot.telegram.dataservice.controller.payload.AnswerCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.PollCreationPayload;
+import local.cosysoft.bot.telegram.dataservice.controller.response.PollResponse;
+import local.cosysoft.bot.telegram.dataservice.controller.response.QuestionResponse;
 import local.cosysoft.bot.telegram.dataservice.entity.AnswerEntity;
 import local.cosysoft.bot.telegram.dataservice.entity.PollEntity;
 import local.cosysoft.bot.telegram.dataservice.entity.QuestionEntity;
@@ -24,18 +28,48 @@ public class TelegramDataService {
     private final AnswerRepository answerRepository;
     private final QuestionRepository questionRepository;
 
-    public Collection<PollEntity> getPolls() {
-        return pollRepository.findAll();
+    public Collection<PollResponse> getPolls() {
+        List<PollEntity> pollEntities = pollRepository.findAll();
+        return getPollResponses(pollEntities);
     }
 
-    public Collection<PollEntity> getPollById(final String id) {
+    public Collection<PollResponse> getPollById(final String id) {
         Optional<PollEntity> pollEntity = pollRepository.findById(UUID.fromString(id));
-        return pollEntity.map(Collections::singletonList).orElse(Collections.emptyList());
+        List<PollEntity> pollEntities = pollEntity.map(Collections::singletonList).orElse(Collections.emptyList());
+        return getPollResponses(pollEntities);
     }
 
-    public String createAnswer(final AnswerEntity answerEntity) {
+    private List<PollResponse> getPollResponses(final List<PollEntity> pollEntities) {
+        return pollEntities.stream().map(poll -> {
+            PollResponse pollResponse = new PollResponse();
+            pollResponse.setName(poll.getName());
+            pollResponse.setId(poll.getId().toString());
+
+            Collection<QuestionEntity> questionEntities = questionRepository.findQuestionEntitiesByPollId(poll.getId().toString());
+
+            List<QuestionResponse> questionResponses = questionEntities.stream().map(question -> {
+                QuestionResponse questionResponse = new QuestionResponse();
+                questionResponse.setContent(question.getContent());
+                questionResponse.setId(question.getId().toString());
+                return questionResponse;
+            }).collect(Collectors.toList());
+
+            pollResponse.setQuestions(questionResponses);
+
+            return pollResponse;
+        }).collect(Collectors.toList());
+    }
+
+    public String createAnswer(final AnswerCreationPayload payload) {
+        AnswerEntity answerEntity = new AnswerEntity();
         UUID answerId = UUID.randomUUID();
         answerEntity.setId(answerId);
+        answerEntity.setContent(payload.getContent());
+        answerEntity.setPollId(payload.getPollId());
+        answerEntity.setQuestionId(payload.getQuestionId());
+        answerEntity.setIsRunnable(Boolean.TRUE);
+        answerEntity.setCreateDate(LocalDateTime.now());
+        answerEntity.setUserTelegramId(payload.getUserTelegramId());
         answerRepository.save(answerEntity);
         return answerId.toString();
     }
