@@ -100,7 +100,10 @@ public class TelegramDataService {
 
     public Optional<PollResponse> getCurrentPoll() {
         List<PollEntity> pollEntities = pollRepository.findAll();
-        Optional<PollEntity> pollEntity = pollEntities.stream().filter(PollEntity::getIsRunnable).findFirst();
+        Optional<PollEntity> pollEntity = pollEntities.stream().filter(pollEntity1 -> {
+            Boolean isRunnable = pollEntity1.getIsRunnable();
+            return isRunnable != null && isRunnable;
+        }).findFirst();
 
         if (pollEntity.isPresent()) {
             PollEntity poll = pollEntity.get();
