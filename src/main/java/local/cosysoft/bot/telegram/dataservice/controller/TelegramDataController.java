@@ -8,6 +8,7 @@ import local.cosysoft.bot.telegram.dataservice.controller.payload.AnswerCreation
 import local.cosysoft.bot.telegram.dataservice.controller.payload.AnswerToUserBindingPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.PollCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.QuestionCreationPayload;
+import local.cosysoft.bot.telegram.dataservice.controller.response.AllAnswerResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.AnswerResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.PollResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.QuestionResponse;
@@ -91,7 +92,7 @@ public class TelegramDataController {
     }
 
     @GetMapping(value = "/show/user/{id}")
-    @Operation(summary = "Получение ответов")
+    @Operation(summary = "Получение ответов по конкретному пользователю")
     public AnswerResponse showByUserId(@PathVariable String id, HttpServletResponse response) {
         Optional<AnswerResponse> answerResponse = telegramDataService.showByUserId(id);
         if (!answerResponse.isPresent()) {
@@ -121,5 +122,16 @@ public class TelegramDataController {
             return new AnswerEntity();
         }
         return answerEntity.get();
+    }
+
+    @GetMapping(value = "/show")
+    @Operation(summary = "Получение ответов по всем пользователям")
+    public AllAnswerResponse show(HttpServletResponse response) {
+        Optional<AllAnswerResponse> answerResponse = telegramDataService.show();
+        if (!answerResponse.isPresent()) {
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return new AllAnswerResponse();
+        }
+        return answerResponse.get();
     }
 }

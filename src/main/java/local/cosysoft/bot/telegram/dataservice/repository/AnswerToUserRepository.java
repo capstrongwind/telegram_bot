@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AnswerToUserRepository extends JpaRepository<AnswerToUserEntity, UUID> {
     Collection<AnswerToUserEntity> findAnswerToUserEntitiesByUserId(String userId);
+    Collection<AnswerToUserEntity> findAnswerToUserEntitiesByAnswerId(String answerId);
 }

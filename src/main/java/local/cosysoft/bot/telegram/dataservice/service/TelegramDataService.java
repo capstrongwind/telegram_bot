@@ -12,11 +12,13 @@ import local.cosysoft.bot.telegram.dataservice.controller.payload.AnswerCreation
 import local.cosysoft.bot.telegram.dataservice.controller.payload.AnswerToUserBindingPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.PollCreationPayload;
 import local.cosysoft.bot.telegram.dataservice.controller.payload.QuestionCreationPayload;
+import local.cosysoft.bot.telegram.dataservice.controller.response.AllAnswerResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.AnswerResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.BasicAnswerResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.PollResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.QuestionResponse;
 import local.cosysoft.bot.telegram.dataservice.controller.response.QuestionToAnswerResponse;
+import local.cosysoft.bot.telegram.dataservice.controller.response.QuestionToAnswerResponseWithUserResponse;
 import local.cosysoft.bot.telegram.dataservice.entity.AnswerEntity;
 import local.cosysoft.bot.telegram.dataservice.entity.AnswerToUserEntity;
 import local.cosysoft.bot.telegram.dataservice.entity.PollEntity;
@@ -184,7 +186,7 @@ public class TelegramDataService {
 
     public Optional<AnswerResponse> showByUserId(final String id) {
         List<PollEntity> pollEntities = pollRepository.findAll();
-        Optional<PollEntity> pollEntity = pollEntities.stream().filter(PollEntity::getIsRunnable).findFirst();
+        Optional<PollEntity> pollEntity = pollEntities.stream().max(Comparator.comparing(PollEntity::getCreateDate));
         if (pollEntity.isPresent()) {
             AnswerResponse answerResponse = new AnswerResponse();
             answerResponse.setUserId(id);
@@ -227,5 +229,30 @@ public class TelegramDataService {
 
     public Optional<AnswerEntity> getAnswerById(final String id) {
         return answerRepository.findById(UUID.fromString(id));
+    }
+
+    public Optional<AllAnswerResponse> show() {
+        List<PollEntity> pollEntities = pollRepository.findAll();
+        Optional<PollEntity> pollEntity = pollEntities.stream().max(Comparator.comparing(PollEntity::getCreateDate));
+        if (pollEntity.isPresent()) {
+            AllAnswerResponse answerResponse = new AllAnswerResponse();
+            answerResponse.setPollId(pollEntity.get().getId().toString());
+            Collection<AnswerEntity> answerEntities = answerRepository.getAnswerEntitiesByPollId(pollEntity.get().getId().toString());
+            List<QuestionToAnswerResponseWithUserResponse> questionToAnswerResponses = answerEntities.stream().map(answerEntity -> {
+                Collection<AnswerToUserEntity> answerToUserEntities = answerToUserRepository.findAnswerToUserEntitiesByAnswerId(answerEntity.getId().toString());
+                return answerToUserEntities.stream().map(answerToUserEntity -> {
+                    QuestionToAnswerResponseWithUserResponse questionToAnswerResponse = new QuestionToAnswerResponseWithUserResponse();
+                    questionToAnswerResponse.setAnswerId(answerToUserEntity.getAnswerId());
+                    questionToAnswerResponse.setQuestionId(answerEntity.getQuestionId());
+                    questionToAnswerResponse.setUserId(answerToUserEntity.getUserId());
+                    return questionToAnswerResponse;
+                }).collect(Collectors.toList());
+            }).flatMap(Collection::stream).collect(Collectors.toList());
+
+            answerResponse.setQuestionToAnswerResponses(questionToAnswerResponses);
+            return Optional.of(answerResponse);
+        }
+
+        return Optional.empty();
     }
 }
