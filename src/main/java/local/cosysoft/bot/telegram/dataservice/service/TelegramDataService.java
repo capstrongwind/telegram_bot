@@ -120,6 +120,14 @@ public class TelegramDataService {
                 QuestionResponse questionResponse = new QuestionResponse();
                 questionResponse.setId(questionEntity.getId().toString());
                 questionResponse.setContent(questionEntity.getContent());
+                Collection<AnswerEntity> answerEntities = answerRepository.getAnswerEntitiesByQuestionId(questionEntity.getId().toString());
+                List<BasicAnswerResponse> answerResponses = answerEntities.stream().map(entity -> {
+                    BasicAnswerResponse basicAnswerResponse = new BasicAnswerResponse();
+                    basicAnswerResponse.setContent(entity.getContent());
+                    basicAnswerResponse.setId(entity.getId().toString());
+                    return basicAnswerResponse;
+                }).collect(Collectors.toList());
+                questionResponse.setAnswers(answerResponses);
                 return questionResponse;
             }).collect(Collectors.toList());
 
