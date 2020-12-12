@@ -246,6 +246,9 @@ public class TelegramDataService {
                     questionToAnswerResponse.setAnswerId(answerToUserEntity.getAnswerId());
                     questionToAnswerResponse.setQuestionId(answerEntity.getQuestionId());
                     questionToAnswerResponse.setUserId(answerToUserEntity.getUserId());
+                    Optional<QuestionEntity> questionEntity = questionRepository.findById(UUID.fromString(answerEntity.getQuestionId()));
+                    questionToAnswerResponse.setQuestionContent(questionEntity.get().getContent());
+                    questionToAnswerResponse.setAnswerContent(answerEntity.getContent());
                     return questionToAnswerResponse;
                 }).collect(Collectors.toList());
             }).flatMap(Collection::stream).collect(Collectors.toList());

@@ -7,5 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class QuestionToAnswerResponse {
     private String questionId;
+    private String questionContent;
     private String answerId;
+    private String answerContent;
 }
